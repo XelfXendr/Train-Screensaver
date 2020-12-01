@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Train-Screensaver-Client": {
+      "commandName": "Project",
+      "commandLineArgs": "/s"
+    }
+  }
+}
