@@ -13,8 +13,8 @@
         MouseWheel="Window_MouseWheel"
         KeyDown="Window_KeyDown">
     <Grid Background="Black">
-        <TextBlock Foreground="Red" FontSize="100">
-            Test
-        </TextBlock>
+        <Canvas x:Name="screensaverCanvas">
+            
+        </Canvas>
     </Grid>
 </Window>
