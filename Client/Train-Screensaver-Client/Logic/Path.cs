@@ -22,12 +22,14 @@ namespace Train_Screensaver_Client.Logic
 
         public Point GetPoint(double distance)
         {
+            if(distance < 0)
+                return new Point(distance, pathPoints[0].Y);
             if (distance >= length)
-                return new Point(distance - length, toTop);
+                return new Point(distance - length + width, toTop);
 
-            double index = pathPoints.Length * distance / length;
+            double index = (pathPoints.Length - 1) * distance / length;
             if (index >= pathPoints.Length - 1)
-                return new Point(distance - length, toTop);
+                return new Point(distance - length + width, toTop);
             double part = index % 1;
 
             return new Point(
