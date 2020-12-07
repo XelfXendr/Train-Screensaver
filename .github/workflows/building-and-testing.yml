@@ -1,0 +1,33 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build server
+      run: cargo build --verbose
+    - name: Run tests on server
+      run: cargo test --verbose
+    - uses: actions/checkout@v2
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.1.301
+    - name: Install dependencies
+      run: dotnet restore ./Client
+    - name: Build windows client
+      run: dotnet build --configuration Release --no-restore
+    - name: Test windows client
+      run: dotnet test --no-restore --verbosity normal
