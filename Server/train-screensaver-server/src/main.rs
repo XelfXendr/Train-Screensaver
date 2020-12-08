@@ -7,7 +7,6 @@ use rand;
 
 fn main() {
     let listener = TcpListener::bind("127.0.0.1:25308").unwrap();
-    listener.set_nonblocking(true).unwrap();
     
     let (sender, receiver) = mpsc::channel::<TcpStream>();
 
