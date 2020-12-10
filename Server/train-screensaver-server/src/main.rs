@@ -88,5 +88,7 @@ fn communication(receiver: mpsc::Receiver<TcpStream>) {
                 continue;
             },
         }
+
+        streams.push_back(stream);
     }
 }
