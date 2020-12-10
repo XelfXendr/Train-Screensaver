@@ -38,7 +38,7 @@ fn communication(receiver: mpsc::Receiver<TcpStream>) {
     let mut start_pos: u16 = rand::random::<u16>();
 
     loop {
-        //add incoming streams into
+        //add incoming streams into queue
         loop {
             if streams.is_empty() {
                 match receiver.recv() {
@@ -62,14 +62,19 @@ fn communication(receiver: mpsc::Receiver<TcpStream>) {
 
         match stream.write(&buffer) {
             Ok(n) => if n != 3 {
+                println!("Couldn't write 3 bytes to stream {}", stream.peer_addr().unwrap());
                 continue;
             },
-            Err(_) => continue,
+            Err(e) => {
+                println!("Writing to stream {} failed with error {}.", stream.peer_addr().unwrap(), e);
+                continue;
+            },
         }
 
         let mut buffer: [u8; 8] = [0; 8];
         match stream.read(&mut buffer) {
             Ok(n) => if n != 3 {
+                println!("Received wrong amount of bytes from {}", stream.peer_addr().unwrap());
                 continue;
             }
             else {
@@ -78,7 +83,10 @@ fn communication(receiver: mpsc::Receiver<TcpStream>) {
                     _ => continue,
                 }
             },
-            Err(_) => continue,
+            Err(e) => { 
+                println!("Receiving from {} failed with error {}", stream.peer_addr().unwrap(), e);
+                continue;
+            },
         }
     }
 }
