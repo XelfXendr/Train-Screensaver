@@ -4,15 +4,18 @@ use std::thread;
 use std::sync::mpsc;
 use std::collections::VecDeque;
 use rand;
+use std::env;
 
 fn main() {
-    let listener = TcpListener::bind("127.0.0.1:25308").unwrap();
+    let args: Vec<String> = env::args().collect();
+
+    let listener = TcpListener::bind(&args[0]).unwrap();
     
     let (sender, receiver) = mpsc::channel::<TcpStream>();
 
     thread::spawn(move || {communication(receiver)});
 
-    println!("Server started, listening.");
+    println!("Server started, listening on {}", args[0]);
     for stream in listener.incoming() {
         let stream = match stream {
             Ok(stream) => 
