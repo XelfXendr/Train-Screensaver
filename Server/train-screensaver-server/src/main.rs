@@ -62,11 +62,11 @@ fn communication(receiver: mpsc::Receiver<TcpStream>) {
 
         match stream.write(&buffer) {
             Ok(n) => if n != 3 {
-                println!("Couldn't write 3 bytes to stream {}", stream.peer_addr().unwrap());
+                println!("Couldn't write 3 bytes to stream.");
                 continue;
             },
             Err(e) => {
-                println!("Writing to stream {} failed with error {}.", stream.peer_addr().unwrap(), e);
+                println!("Writing failed with error {}.", e);
                 continue;
             },
         }
@@ -74,7 +74,7 @@ fn communication(receiver: mpsc::Receiver<TcpStream>) {
         let mut buffer: [u8; 8] = [0; 8];
         match stream.read(&mut buffer) {
             Ok(n) => if n != 3 {
-                println!("Received wrong amount of bytes from {}", stream.peer_addr().unwrap());
+                println!("Received wrong amount of bytes from");
                 continue;
             }
             else {
@@ -84,7 +84,7 @@ fn communication(receiver: mpsc::Receiver<TcpStream>) {
                 }
             },
             Err(e) => { 
-                println!("Receiving from {} failed with error {}", stream.peer_addr().unwrap(), e);
+                println!("Receiving failed with error {}", e);
                 continue;
             },
         }
