@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Train_Screensaver_Client"
         mc:Ignorable="d"
-        Title="ScreensaverWindow" Height="450" Width="800"
+        Title="ScreensaverWindow" Height="450" Width="800" WindowStartupLocation="Manual"
         Loaded="Window_Loaded"
         MouseMove="Window_MouseMove"
         MouseLeftButtonDown="Window_MouseLeftButtonDown"

@@ -39,8 +39,15 @@ namespace Train_Screensaver_Client.Logic
 
         }
 
-        public void GeneratePath(double fromTop)
+        public UInt16 GetToTop()
         {
+            return (UInt16)((toTop - minTop) / (maxTop - minTop) * UInt16.MaxValue);
+        }
+
+        public void GeneratePath(UInt16 top)
+        {
+            double fromTop = ((double)top / UInt16.MaxValue) * (maxTop - minTop) + minTop;
+
             int halfSegCount = 20; //how many segments the final Path consists of divided by 2
             int pointCount = 2 * halfSegCount + 1;
 

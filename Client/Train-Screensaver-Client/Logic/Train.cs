@@ -20,6 +20,10 @@ namespace Train_Screensaver_Client.Logic
         
         private Path path;
         private double currentDistance = 0;
+        private bool firstFinished = false;
+
+        public EventHandler<FinishedEventArgs> onFirstFinished;
+        public EventHandler<FinishedEventArgs> onLastFinished;
 
         public Train(Canvas canvas, string[] imageSources, int[] wagonIndexes)
         {
@@ -60,10 +64,18 @@ namespace Train_Screensaver_Client.Logic
                     dist -= wagon.Width;
                 }
 
+                if(!firstFinished && currentDistance > path.length)
+                {
+                    firstFinished = true;
+                    if (onFirstFinished != null)
+                        onFirstFinished(null, new FinishedEventArgs(path.GetToTop()));
+                }
+
                 if (dist > path.length)
                 {
                     dispatherTimer.Stop();
-                    Send((float)(new Random()).NextDouble() * 980 + 100);
+                    if (onLastFinished != null)
+                        onLastFinished(null, new FinishedEventArgs(path.GetToTop()));
                 }
 
                 currentDistance += 5;
@@ -71,11 +83,23 @@ namespace Train_Screensaver_Client.Logic
             dispatherTimer.Interval = TimeSpan.FromMilliseconds(50 / 3);
         }
 
-        public void Send(double top)
+        public void Send(UInt16 top)
         {
+            firstFinished = false;
             currentDistance = -100;
             path.GeneratePath(top);
             dispatherTimer.Start();
         }
+    }
+
+    public class FinishedEventArgs : EventArgs
+    {
+        public UInt16 position;
+
+        public FinishedEventArgs(UInt16 position)
+        {
+            this.position = position;
+        }
+
     }
 }

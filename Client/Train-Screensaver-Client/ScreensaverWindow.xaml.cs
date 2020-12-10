@@ -10,8 +10,12 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using System.Threading;
 
 using Train_Screensaver_Client.Logic;
+using Train_Screensaver_Client.Networking;
+using System.Threading.Tasks;
+using System.ComponentModel;
 
 namespace Train_Screensaver_Client
 {
@@ -22,7 +26,9 @@ namespace Train_Screensaver_Client
     {
         private Point mousePos = new Point(-1, -1);
 
-        public Train train;
+        private Train train;
+
+        private Connection connection;
 
         public ScreensaverWindow()
         {
@@ -48,8 +54,67 @@ namespace Train_Screensaver_Client
                 Environment.CurrentDirectory + "/Trains/wagon08.png",
             };
             int[] indexes = new int[] { 0, 1, 1, 1, 5, 1, 1, 8, 6, 7, 2, 2, 4, 3, 3, 8, 3, 3, 6, 8, 6, 7 };
-            Train train = new Train(screensaverCanvas, sources, indexes);
-            train.Send(new Random().NextDouble() * (screensaverCanvas.ActualHeight - 100) + 100);
+
+            train = new Train(screensaverCanvas, sources, indexes);
+
+
+            connection = new Connection("192.168.1.35", 25308);
+
+            train.onFirstFinished += (_, e) =>
+            {
+                byte[] data = new byte[] { 0x09, (byte)(e.position >> 8), (byte)e.position };
+
+                BackgroundWorker sender = new BackgroundWorker();
+                sender.DoWork += (_, e) =>
+                {
+                    connection.Send(data);
+                };
+
+                sender.RunWorkerAsync();
+            };
+
+            train.onLastFinished += (_, e) =>
+            {
+                BackgroundWorker reader = new BackgroundWorker();
+                reader.DoWork += (_, e) =>
+                {
+                    byte[] data;
+
+                    while (!connection.Read(out data))
+                    {
+                        Reconnect();
+                    }
+
+                    e.Result = (UInt16)((data[1] << 8) | data[2]);
+                };
+
+                reader.RunWorkerCompleted += (_, e) =>
+                {
+                    train.Send((UInt16)e.Result);
+                };
+
+                reader.RunWorkerAsync();
+            };
+
+            BackgroundWorker waiter = new BackgroundWorker();
+            waiter.DoWork += (_, e) =>
+            {
+                Reconnect();
+            };
+
+            waiter.RunWorkerCompleted += (_, e) =>
+            {
+                train.onLastFinished(null, new FinishedEventArgs(0));
+            };
+
+            waiter.RunWorkerAsync();
+        }
+
+        private void Reconnect()
+        {
+            connection.Close();
+            while (!connection.Open())
+                Thread.Sleep(10000);
         }
 
         //Stop screensaver if some event happens
@@ -74,6 +139,7 @@ namespace Train_Screensaver_Client
 
         public void StopScreenSaver()
         {
+            //connectionThread.Abort();
             Application.Current.Shutdown();
         }
     }

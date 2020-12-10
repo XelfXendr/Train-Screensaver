@@ -15,7 +15,7 @@ namespace Train_Screensaver_Client_Test
             var path = new Path(maxTop, minTop, width);
             for (int p = 0; p < numberOfPaths; p++)
             {
-                path.GeneratePath(fromTop);
+                path.GeneratePath((UInt16)((fromTop - minTop) / (maxTop - minTop) * UInt16.MaxValue));
                 var points = path.pathPoints;
 
                 for (int i = 1; i < points.Length; i++)
@@ -32,7 +32,7 @@ namespace Train_Screensaver_Client_Test
             var path = new Path(maxTop, minTop, width);
             for (int p = 0; p < numberOfPaths; p++)
             {
-                path.GeneratePath(fromTop);
+                path.GeneratePath((UInt16)((fromTop - minTop) / (maxTop - minTop) * UInt16.MaxValue));
                 var points = path.pathPoints;
 
                 for (int i = 0; i < points.Length; i++)
@@ -47,7 +47,7 @@ namespace Train_Screensaver_Client_Test
             var path = new Path(maxTop, minTop, width);
             for (int p = 0; p < numberOfPaths; p++)
             {
-                path.GeneratePath(fromTop);
+                path.GeneratePath((UInt16)((fromTop - minTop) / (maxTop - minTop) * UInt16.MaxValue));
                 var points = path.pathPoints;
 
                 Assert.True(AproxEqual(points[0].X, 0) && AproxEqual(points[0].Y, fromTop) && AproxEqual(points[points.Length - 1].X, width));
