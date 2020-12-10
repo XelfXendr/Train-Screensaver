@@ -9,13 +9,13 @@ use std::env;
 fn main() {
     let args: Vec<String> = env::args().collect();
 
-    let listener = TcpListener::bind(&args[0]).unwrap();
+    let listener = TcpListener::bind(&args[1]).unwrap();
     
     let (sender, receiver) = mpsc::channel::<TcpStream>();
 
     thread::spawn(move || {communication(receiver)});
 
-    println!("Server started, listening on {}", args[0]);
+    println!("Server started, listening on {}", args[1]);
     for stream in listener.incoming() {
         let stream = match stream {
             Ok(stream) => 
