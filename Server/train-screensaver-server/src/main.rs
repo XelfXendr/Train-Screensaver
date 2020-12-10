@@ -12,9 +12,14 @@ fn main() {
 
     thread::spawn(move || {communication(receiver)});
 
+    println!("Server started, listening.");
     for stream in listener.incoming() {
         let stream = match stream {
-            Ok(stream) => stream,
+            Ok(stream) => 
+            {
+                println!("New connection: {}", stream.peer_addr().unwrap());
+                stream
+            },
             Err(err) => {
                 println!("Incomming connection failed with error: {}", err);
                 continue;
@@ -51,7 +56,7 @@ fn communication(receiver: mpsc::Receiver<TcpStream>) {
         
         let mut stream = streams.pop_front().unwrap();
         let buffer: [u8; 3] = [0x90, (start_pos >> 8) as u8, start_pos as u8]; //trainright
-        
+
         match stream.write(&buffer) {
             Ok(n) => if n != 3 {
                 continue;
