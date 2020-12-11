@@ -66,7 +66,6 @@ namespace Train_Screensaver_Client
 
             train = new Train(screensaverCanvas, sources, indexes);
 
-
             connection = new Connection("192.168.1.35", 25308);
 
             train.onFirstFinished += (_, e) =>

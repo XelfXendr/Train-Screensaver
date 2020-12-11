@@ -28,21 +28,25 @@ namespace Train_Screensaver_Client.Logic
         public Train(Canvas canvas, string[] imageSources, int[] wagonIndexes)
         {
             this.canvas = canvas;
-            dispatherTimer = new DispatcherTimer();
-            path = new Path(canvas.ActualHeight, 100, canvas.ActualWidth);
-
+            
             BitmapImage[] bitmaps = imageSources.Select((s) => new BitmapImage(new Uri(s))).ToArray();
             
             wagons = new Image[wagonIndexes.Length];
 
+            double maxHeight = 0;
             for(int i = 0; i < wagonIndexes.Length; i++)
             {
-                wagons[i] = new Image() { Source = bitmaps[wagonIndexes[i]], Width = bitmaps[wagonIndexes[i]].Width, };
+                wagons[i] = new Image() { Source = bitmaps[wagonIndexes[i]], Width = bitmaps[wagonIndexes[i]].Width, Height = bitmaps[wagonIndexes[i]].Height };
 
                 canvas.Children.Add(wagons[i]);
                 Canvas.SetLeft(wagons[i], -wagons[i].Width);
+
+                if (wagons[i].Height > maxHeight)
+                    maxHeight = wagons[i].Height;
             }
 
+            path = new Path(canvas.ActualHeight - maxHeight - 10, 10, canvas.ActualWidth);
+            dispatherTimer = new DispatcherTimer();
 
             dispatherTimer.Tick += (_, e) =>
             {
@@ -54,13 +58,13 @@ namespace Train_Screensaver_Client.Logic
                     Point pointFront = path.GetPoint(dist + wagon.Width);
 
                     Canvas.SetLeft(wagon, pointBack.X);
-                    Canvas.SetTop(wagon, pointBack.Y);
+                    Canvas.SetTop(wagon, pointBack.Y + maxHeight - wagon.Height);
 
                     double x = pointFront.X - pointBack.X;
                     double y = pointFront.Y - pointBack.Y;
                     double sin = y / Math.Sqrt(x*x + y*y);
 
-                    wagon.RenderTransform = new RotateTransform(Math.Asin(sin) / Math.PI * 180);
+                    wagon.RenderTransform = new RotateTransform(Math.Asin(sin) / Math.PI * 180, 0, wagon.Height);
                     dist -= wagon.Width;
                 }
 
