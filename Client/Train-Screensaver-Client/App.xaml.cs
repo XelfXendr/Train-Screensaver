@@ -56,8 +56,6 @@ namespace Train_Screensaver_Client
         static void ShowScreenSaver()
         {
             var window = new ScreensaverWindow();
-            window.WindowState = WindowState.Maximized;
-            window.WindowStyle = WindowStyle.None;
             window.Show();
         }
 

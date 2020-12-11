@@ -33,6 +33,15 @@ namespace Train_Screensaver_Client
         public ScreensaverWindow()
         {
             InitializeComponent();
+
+            this.Left = SystemParameters.VirtualScreenLeft - 10;
+            this.Top = SystemParameters.VirtualScreenTop - 10;
+
+            this.Height = SystemParameters.VirtualScreenHeight + 20;
+            this.Width = SystemParameters.VirtualScreenWidth + 20;
+
+            WindowState = WindowState.Normal;
+            WindowStyle = WindowStyle.None;
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
