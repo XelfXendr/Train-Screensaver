@@ -33,13 +33,13 @@ namespace Train_Screensaver_Client
         public ScreensaverWindow()
         {
             InitializeComponent();
-
+            
             this.Left = SystemParameters.VirtualScreenLeft - 10;
             this.Top = SystemParameters.VirtualScreenTop - 10;
 
             this.Height = SystemParameters.VirtualScreenHeight + 20;
             this.Width = SystemParameters.VirtualScreenWidth + 20;
-
+            
             WindowState = WindowState.Normal;
             WindowStyle = WindowStyle.None;
         }
@@ -49,73 +49,68 @@ namespace Train_Screensaver_Client
             Cursor = Cursors.None;
             Topmost = true;
 
-            //Train testing
-            string[] sources = new string[]
-            {
-                Environment.CurrentDirectory + "/Trains/front.png",
-                Environment.CurrentDirectory + "/Trains/wagon01.png",
-                Environment.CurrentDirectory + "/Trains/wagon02.png",
-                Environment.CurrentDirectory + "/Trains/wagon03.png",
-                Environment.CurrentDirectory + "/Trains/wagon04.png",
-                Environment.CurrentDirectory + "/Trains/wagon05.png",
-                Environment.CurrentDirectory + "/Trains/wagon06.png",
-                Environment.CurrentDirectory + "/Trains/wagon07.png",
-                Environment.CurrentDirectory + "/Trains/wagon08.png",
-            };
-            int[] indexes = new int[] { 0, 1, 1, 1, 5, 1, 1, 8, 6, 7, 2, 2, 4, 3, 3, 8, 3, 3, 6, 8, 6, 7 };
-
-            train = new Train(screensaverCanvas, sources, indexes);
+            BackgroundWorker loader = new BackgroundWorker();
 
             connection = new Connection("192.168.1.35", 25308);
 
-            train.onFirstFinished += (_, e) =>
+            loader.DoWork += (_, e) =>
             {
-                byte[] data = new byte[] { 0x09, (byte)(e.position >> 8), (byte)e.position };
+                //load configuration and wagon images
+                var config = Configurator.LoadConfig();
+                var loadedImages = config.LoadImages();
 
-                BackgroundWorker sender = new BackgroundWorker();
-                sender.DoWork += (_, e) =>
-                {
-                    connection.Send(data);
-                };
+                e.Result = (config, loadedImages);
 
-                sender.RunWorkerAsync();
+                //Begin connection
+                Reconnect();        
             };
-
-            train.onLastFinished += (_, e) =>
+            loader.RunWorkerCompleted += (_, e) =>
             {
-                BackgroundWorker reader = new BackgroundWorker();
-                reader.DoWork += (_, e) =>
-                {
-                    byte[] data;
+                (Config config, BitmapImage[] loadedImages) = ((Config, BitmapImage[]))e.Result;
+                train = new Train(screensaverCanvas, config, loadedImages);
 
-                    while (!connection.Read(out data))
+                train.onFirstFinished += (_, e) =>
+                {
+                    byte[] data = new byte[] { 0x09, (byte)(e.position >> 8), (byte)e.position };
+
+                    BackgroundWorker sender = new BackgroundWorker();
+                    sender.DoWork += (_, e) =>
                     {
-                        Reconnect();
-                    }
+                        connection.Send(data);
+                    };
 
-                    e.Result = (UInt16)((data[1] << 8) | data[2]);
+                    sender.RunWorkerAsync();
                 };
 
-                reader.RunWorkerCompleted += (_, e) =>
+                train.onLastFinished += (_, e) =>
                 {
-                    train.Send((UInt16)e.Result);
+                    BackgroundWorker reader = new BackgroundWorker();
+                    reader.DoWork += (_, e) =>
+                    {
+                        byte[] data;
+
+                        while (!connection.Read(out data))
+                        {
+                            Reconnect();
+                        }
+
+                        e.Result = (UInt16)((data[1] << 8) | data[2]);
+                    };
+
+                    reader.RunWorkerCompleted += (_, e) =>
+                    {
+                        train.Send((UInt16)e.Result);
+                    };
+
+                    reader.RunWorkerAsync();
                 };
 
-                reader.RunWorkerAsync();
-            };
-
-            BackgroundWorker waiter = new BackgroundWorker();
-            waiter.DoWork += (_, e) =>
-            {
-                Reconnect();
-            };
-
-            waiter.RunWorkerCompleted += (_, e) =>
-            {
+                //Once connected, begin communication
                 train.onLastFinished(null, new FinishedEventArgs(0));
             };
 
-            waiter.RunWorkerAsync();
+
+            loader.RunWorkerAsync();
         }
 
         private void Reconnect()

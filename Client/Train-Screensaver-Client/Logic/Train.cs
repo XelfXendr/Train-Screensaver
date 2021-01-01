@@ -25,19 +25,32 @@ namespace Train_Screensaver_Client.Logic
         public EventHandler<FinishedEventArgs> onFirstFinished;
         public EventHandler<FinishedEventArgs> onLastFinished;
 
-        public Train(Canvas canvas, string[] imageSources, int[] wagonIndexes)
+        public Train(Canvas canvas, Config config, BitmapImage[] images)
         {
             this.canvas = canvas;
-            
-            BitmapImage[] bitmaps = imageSources.Select((s) => new BitmapImage(new Uri(s))).ToArray();
-            
-            wagons = new Image[wagonIndexes.Length];
+
+            wagons = new Image[config.trainIndexes.Length];
 
             double maxHeight = 0;
-            for(int i = 0; i < wagonIndexes.Length; i++)
+            for(int i = 0; i < config.trainIndexes.Length; i++)
             {
-                wagons[i] = new Image() { Source = bitmaps[wagonIndexes[i]], Width = bitmaps[wagonIndexes[i]].Width, Height = bitmaps[wagonIndexes[i]].Height };
+                BitmapImage bitmap;
+                if (config.trainIndexes[i] >= config.wagonSources.Length || config.trainIndexes[i] < 0)
+                {
+                    using (var ms = new System.IO.MemoryStream(Properties.Resources.WrongIndex))
+                    {
+                        bitmap = new BitmapImage();
+                        bitmap.BeginInit();
+                        bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmap.StreamSource = ms;
+                        bitmap.EndInit();
+                    }
+                }
+                else
+                    bitmap = images[config.trainIndexes[i]];
 
+                wagons[i] = new Image() { Source = bitmap, Width = bitmap.Width, Height = bitmap.Height };
+                    
                 canvas.Children.Add(wagons[i]);
                 Canvas.SetLeft(wagons[i], -wagons[i].Width);
 
@@ -84,7 +97,7 @@ namespace Train_Screensaver_Client.Logic
 
                 currentDistance += 5;
             };
-            dispatherTimer.Interval = TimeSpan.FromMilliseconds(50 / 3);
+            dispatherTimer.Interval = TimeSpan.FromMilliseconds( 1000d / config.framerate );
         }
 
         public void Send(UInt16 top)
