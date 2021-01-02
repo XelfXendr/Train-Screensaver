@@ -77,6 +77,7 @@ fn communication(receiver: mpsc::Receiver<TcpStream>, client_order: HashMap<Stri
     let mut right_stack: Vec<Client> = Vec::new();
     let mut left_stack: Vec<Client> = Vec::new();
 
+    let mut will_sort = false;
     loop {
         //add incoming streams into queue
         loop {
@@ -126,12 +127,11 @@ fn communication(receiver: mpsc::Receiver<TcpStream>, client_order: HashMap<Stri
 
                         if going_right {
                             left_stack.push(Client {stream, order});
-                            left_stack.sort_unstable_by(|a, b| a.order.partial_cmp(&b.order).unwrap());
                         }
                         else {
                             right_stack.push(Client {stream, order});
-                            right_stack.sort_unstable_by(|a, b| b.order.partial_cmp(&a.order).unwrap());
                         }
+                        will_sort = true;
                     },
                     Err(e) => match e {
                         mpsc::TryRecvError::Empty => break,
@@ -144,6 +144,10 @@ fn communication(receiver: mpsc::Receiver<TcpStream>, client_order: HashMap<Stri
         let mut client;
         if going_right {
             if right_stack.is_empty() {
+                if will_sort {
+                    will_sort = false;
+                    left_stack.sort_unstable_by(|a, b| a.order.partial_cmp(&b.order).unwrap());
+                }
                 going_right = false;
                 continue;
             }
@@ -151,6 +155,10 @@ fn communication(receiver: mpsc::Receiver<TcpStream>, client_order: HashMap<Stri
         }
         else {
             if left_stack.is_empty() {
+                if will_sort {
+                    will_sort = false;
+                    right_stack.sort_unstable_by(|a, b| b.order.partial_cmp(&a.order).unwrap());
+                }
                 going_right = true;
                 continue;
             }

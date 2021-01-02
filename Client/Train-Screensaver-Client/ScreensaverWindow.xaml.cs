@@ -92,12 +92,13 @@ namespace Train_Screensaver_Client
                             Reconnect(connection);
                         }
 
-                        e.Result = (UInt16)((data[1] << 8) | data[2]);
+                        e.Result = (data[0] == 0x90, (UInt16)((data[1] << 8) | data[2]));
                     };
 
                     reader.RunWorkerCompleted += (_, e) =>
                     {
-                        train.Send((UInt16)e.Result);
+                        (bool goRight, UInt16 from) = ((bool, UInt16))e.Result;
+                        train.Send(goRight, from);
                     };
 
                     reader.RunWorkerAsync();

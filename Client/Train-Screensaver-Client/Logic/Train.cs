@@ -19,6 +19,7 @@ namespace Train_Screensaver_Client.Logic
         private DispatcherTimer dispatherTimer;
         
         private Path path;
+        private bool right = true;
         private double currentDistance = 0;
         private bool firstFinished = false;
 
@@ -50,7 +51,7 @@ namespace Train_Screensaver_Client.Logic
                     bitmap = images[config.trainIndexes[i]];
 
                 wagons[i] = new Image() { Source = bitmap, Width = bitmap.Width, Height = bitmap.Height };
-                    
+                wagons[i].RenderTransformOrigin = new Point(0.5, 0.5);
                 canvas.Children.Add(wagons[i]);
                 Canvas.SetLeft(wagons[i], -wagons[i].Width);
 
@@ -70,6 +71,13 @@ namespace Train_Screensaver_Client.Logic
                     Point pointBack = path.GetPoint(dist);
                     Point pointFront = path.GetPoint(dist + wagon.Width);
 
+                    if (!right)
+                    {
+                        //var swap = path.width - pointFront.X;
+                        pointFront.X = path.width - pointFront.X;
+                        pointBack.X = path.width - pointBack.X;
+                    }
+
                     Canvas.SetLeft(wagon, pointBack.X);
                     Canvas.SetTop(wagon, pointBack.Y + maxHeight - wagon.Height);
 
@@ -77,7 +85,16 @@ namespace Train_Screensaver_Client.Logic
                     double y = pointFront.Y - pointBack.Y;
                     double sin = y / Math.Sqrt(x*x + y*y);
 
-                    wagon.RenderTransform = new RotateTransform(Math.Asin(sin) / Math.PI * 180, 0, wagon.Height);
+                    TransformGroup grp = new TransformGroup();
+
+                    if (!right)
+                    {
+                        grp.Children.Add(new ScaleTransform(-1, 1));
+                        grp.Children.Add(new RotateTransform(-Math.Asin(sin) / Math.PI * 180, wagon.Width / 2, wagon.Height / 2));
+                    }
+                    else
+                        grp.Children.Add(new RotateTransform(Math.Asin(sin) / Math.PI * 180, -wagon.Width / 2, wagon.Height / 2));
+                    wagon.RenderTransform = grp;
                     dist -= wagon.Width;
                 }
 
@@ -100,8 +117,9 @@ namespace Train_Screensaver_Client.Logic
             dispatherTimer.Interval = TimeSpan.FromMilliseconds( 1000d / config.framerate );
         }
 
-        public void Send(UInt16 top)
+        public void Send(bool right, UInt16 top)
         {
+            this.right = right;
             firstFinished = false;
             currentDistance = -100;
             path.GeneratePath(top);

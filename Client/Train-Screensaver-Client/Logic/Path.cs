@@ -7,7 +7,7 @@ namespace Train_Screensaver_Client.Logic
 {
     public class Path
     {
-        private double maxTop, minTop, toTop, width;
+        public double maxTop, minTop, toTop, width;
         
         public Point[] pathPoints;
 
