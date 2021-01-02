@@ -24,7 +24,7 @@ fn main() {
                 let mut file = File::create(dir).expect("Couldn't create configuration file.");
                 let json = json!({
                     "address": "0.0.0.0",
-                    "port": "25308",
+                    "port": 25308,
                     "client_order": [
                         "10.0.0.1",
                         "10.0.0.2"
