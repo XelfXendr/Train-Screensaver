@@ -71,10 +71,10 @@ fn communication(receiver: mpsc::Receiver<TcpStream>) {
             },
         }
 
-        let mut buffer: [u8; 8] = [0; 8];
+        let mut buffer: [u8; 3] = [0; 3];
         match stream.read(&mut buffer) {
             Ok(n) => if n != 3 {
-                println!("Received wrong amount of bytes from");
+                println!("Received wrong amount of bytes");
                 continue;
             }
             else {

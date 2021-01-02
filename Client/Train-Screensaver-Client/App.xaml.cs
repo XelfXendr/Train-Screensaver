@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -39,6 +40,7 @@ namespace Train_Screensaver_Client
 
                     case "/p":  //Show screen-saver preview
                         //Preview not yet supported
+                        Application.Current.Shutdown();
                         break;
 
                     case "/s":  //Show screen-saver
@@ -47,6 +49,7 @@ namespace Train_Screensaver_Client
 
                     default: //Invalid
                         MessageBox.Show("Command-line argument \"" + first + "\" is not valid.", "ScreenSaver", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                        Application.Current.Shutdown();
                         break;
                 }
             }
@@ -62,7 +65,18 @@ namespace Train_Screensaver_Client
 
         static void ShowConfiguration()
         {
-            MessageBox.Show("Screensaver cannot be configured yet.", "ScreenSaver", MessageBoxButton.OK);
+            try
+            {
+                if (!Configurator.ConfigExists())
+                    Configurator.CreateConfig();
+                Process.Start("explorer.exe", Configurator.folder);
+            }
+            catch
+            {
+                MessageBox.Show("Cannot access configuration folder:\n" + Configurator.folder, "ScreenSaver", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            Application.Current.Shutdown();
         }
     }
 }

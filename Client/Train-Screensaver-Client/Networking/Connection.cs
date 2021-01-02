@@ -9,12 +9,12 @@ namespace Train_Screensaver_Client.Networking
     class Connection
     {
         private string server;
-        private int port;
+        private ushort port;
 
         TcpClient client;
         NetworkStream stream;
 
-        public Connection(string server, int port)
+        public Connection(string server, ushort port)
         {
             this.server = server;
             this.port = port;
@@ -27,7 +27,7 @@ namespace Train_Screensaver_Client.Networking
                 client = new TcpClient(server, port);
                 stream = client.GetStream();
             }
-            catch (SocketException)
+            catch
             {
                 Close();
                 return false;

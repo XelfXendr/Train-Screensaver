@@ -28,8 +28,6 @@ namespace Train_Screensaver_Client
 
         private Train train;
 
-        private Connection connection;
-
         public ScreensaverWindow()
         {
             InitializeComponent();
@@ -51,22 +49,22 @@ namespace Train_Screensaver_Client
 
             BackgroundWorker loader = new BackgroundWorker();
 
-            connection = new Connection("192.168.1.35", 25308);
-
             loader.DoWork += (_, e) =>
             {
                 //load configuration and wagon images
                 var config = Configurator.LoadConfig();
                 var loadedImages = config.LoadImages();
+                var connection = new Connection(config.server, config.port);
 
-                e.Result = (config, loadedImages);
+                e.Result = (config, loadedImages, connection);
 
                 //Begin connection
-                Reconnect();        
+                Reconnect(connection);        
             };
             loader.RunWorkerCompleted += (_, e) =>
             {
-                (Config config, BitmapImage[] loadedImages) = ((Config, BitmapImage[]))e.Result;
+                (Config config, BitmapImage[] loadedImages, Connection connection) = ((Config, BitmapImage[], Connection))e.Result;
+
                 train = new Train(screensaverCanvas, config, loadedImages);
 
                 train.onFirstFinished += (_, e) =>
@@ -91,7 +89,7 @@ namespace Train_Screensaver_Client
 
                         while (!connection.Read(out data))
                         {
-                            Reconnect();
+                            Reconnect(connection);
                         }
 
                         e.Result = (UInt16)((data[1] << 8) | data[2]);
@@ -113,7 +111,7 @@ namespace Train_Screensaver_Client
             loader.RunWorkerAsync();
         }
 
-        private void Reconnect()
+        private void Reconnect(Connection connection)
         {
             connection.Close();
             while (!connection.Open())

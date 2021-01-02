@@ -12,9 +12,12 @@ namespace Train_Screensaver_Client.Logic
     [Serializable]
     public class Config
     {
+        public string server { get; set; }
+        public ushort port { get; set; }
         public int framerate { get; set; }
         public string[] wagonSources { get; set; }
         public int[] trainIndexes { get; set; }
+
 
         public BitmapImage[] LoadImages()
         {
@@ -72,11 +75,17 @@ namespace Train_Screensaver_Client.Logic
             {
                 string json = File.ReadAllText(file);
                 config = JsonSerializer.Deserialize<Config>(json, jsonOptions);
+                if(config.framerate <= 0)
+                {
+                    config.framerate = 1;
+                }
             }
             catch
             {
                 config = new Config()
                 {
+                    server = "",
+                    port = 25308,
                     framerate = 30,
                     wagonSources = new string[] { "example1.png", "example2.jpg" },
                     trainIndexes = new int[] { 0, 1, 1 },
@@ -90,6 +99,8 @@ namespace Train_Screensaver_Client.Logic
         {
             Config config = new Config()
             {
+                server = "",
+                port = 25308,
                 framerate = 30,
                 wagonSources = new string[] { "example1.png", "example2.jpg" },
                 trainIndexes = new int[] { 0, 1, 1 },
@@ -101,6 +112,11 @@ namespace Train_Screensaver_Client.Logic
             string file = System.IO.Path.Combine(folder, configFile);
 
             File.WriteAllText(file, json);
+        }
+
+        public static bool ConfigExists()
+        {
+            return File.Exists(System.IO.Path.Combine(folder, configFile));
         }
     }
 }
