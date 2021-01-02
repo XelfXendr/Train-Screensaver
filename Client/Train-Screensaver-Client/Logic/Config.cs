@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.IO;
 using System.Windows.Media.Imaging;
-using System.Windows.Media;
 
 namespace Train_Screensaver_Client.Logic
 {
@@ -18,11 +14,10 @@ namespace Train_Screensaver_Client.Logic
         public string[] wagonSources { get; set; }
         public int[] trainIndexes { get; set; }
 
-
+        //Loads all images listed in configuration
         public BitmapImage[] LoadImages()
         {
             BitmapImage[] images = new BitmapImage[wagonSources.Length];
-            
             for(int i = 0; i < images.Length; i++)
             {
                 try
@@ -32,7 +27,7 @@ namespace Train_Screensaver_Client.Logic
                     else
                         images[i] = new BitmapImage(new Uri(System.IO.Path.Combine(Configurator.folder, wagonSources[i])));
                 }
-                catch //if the image source doesn't exist
+                catch //if the image source cannot be read, use a "missing texture" texture instead 
                 {
                     using (var ms = new MemoryStream(Properties.Resources.NotFound))
                     {
@@ -50,6 +45,19 @@ namespace Train_Screensaver_Client.Logic
 
             return images;
         }
+
+        //Configuration example
+        public static Config Example()
+        {
+            return new Config()
+            {
+                server = "",
+                port = 25308,
+                framerate = 30,
+                wagonSources = new string[] { "example1.png", "example2.jpg" },
+                trainIndexes = new int[] { 0, 1, 1 },
+            };
+        }
     }
 
     public static class Configurator
@@ -62,6 +70,7 @@ namespace Train_Screensaver_Client.Logic
             WriteIndented = true,
         };
 
+        //load configuration file and return a deserialized Config object
         public static Config LoadConfig()
         {
             string file = System.IO.Path.Combine(folder, configFile);
@@ -82,29 +91,16 @@ namespace Train_Screensaver_Client.Logic
             }
             catch
             {
-                config = new Config()
-                {
-                    server = "",
-                    port = 25308,
-                    framerate = 30,
-                    wagonSources = new string[] { "example1.png", "example2.jpg" },
-                    trainIndexes = new int[] { 0, 1, 1 },
-                };
+                config = Config.Example();
             }
             
             return config;
         }
 
+        //Creates a sample configuration file
         public static void CreateConfig()
         {
-            Config config = new Config()
-            {
-                server = "",
-                port = 25308,
-                framerate = 30,
-                wagonSources = new string[] { "example1.png", "example2.jpg" },
-                trainIndexes = new int[] { 0, 1, 1 },
-            };
+            Config config = Config.Example();
 
             Directory.CreateDirectory(folder);
 
@@ -114,6 +110,7 @@ namespace Train_Screensaver_Client.Logic
             File.WriteAllText(file, json);
         }
 
+        //Does configuration file exist
         public static bool ConfigExists()
         {
             return File.Exists(System.IO.Path.Combine(folder, configFile));

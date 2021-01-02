@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
-using System.Linq;
 using System.Windows.Threading;
 using System.Windows;
 using System.Windows.Media;
@@ -13,7 +10,6 @@ namespace Train_Screensaver_Client.Logic
     //🚂🚃🚃🚃🚃🚃🚃🚃🚃🚃
     public class Train
     {
-        private Canvas canvas;
         private Image[] wagons;
         
         private DispatcherTimer dispatherTimer;
@@ -23,21 +19,23 @@ namespace Train_Screensaver_Client.Logic
         private double currentDistance = 0;
         private bool firstFinished = false;
 
+        private double speed = 300;
+
         public EventHandler<FinishedEventArgs> onFirstFinished;
         public EventHandler<FinishedEventArgs> onLastFinished;
 
         public Train(Canvas canvas, Config config, BitmapImage[] images)
         {
-            this.canvas = canvas;
-
             wagons = new Image[config.trainIndexes.Length];
 
+            //Create WPF Image objects (wagons) from supplied Bitmaps
             double maxHeight = 0;
             for(int i = 0; i < config.trainIndexes.Length; i++)
             {
                 BitmapImage bitmap;
                 if (config.trainIndexes[i] >= config.wagonSources.Length || config.trainIndexes[i] < 0)
                 {
+                    //index out of bounds, use "wrong index" texture instead
                     using (var ms = new System.IO.MemoryStream(Properties.Resources.WrongIndex))
                     {
                         bitmap = new BitmapImage();
@@ -60,12 +58,14 @@ namespace Train_Screensaver_Client.Logic
             }
 
             path = new Path(canvas.ActualHeight - maxHeight - 10, 10, canvas.ActualWidth);
-            dispatherTimer = new DispatcherTimer();
 
+            //Animation frame loop
+            dispatherTimer = new DispatcherTimer();
             dispatherTimer.Tick += (_, e) =>
             {
                 double dist = currentDistance;
 
+                //move each wagon
                 foreach (var wagon in wagons)
                 {
                     Point pointBack = path.GetPoint(dist);
@@ -73,7 +73,6 @@ namespace Train_Screensaver_Client.Logic
 
                     if (!right)
                     {
-                        //var swap = path.width - pointFront.X;
                         pointFront.X = path.width - pointFront.X;
                         pointBack.X = path.width - pointBack.X;
                     }
@@ -98,6 +97,7 @@ namespace Train_Screensaver_Client.Logic
                     dist -= wagon.Width;
                 }
 
+                //check if first wagon has finished it's trip
                 if(!firstFinished && currentDistance > path.length)
                 {
                     firstFinished = true;
@@ -105,6 +105,7 @@ namespace Train_Screensaver_Client.Logic
                         onFirstFinished(null, new FinishedEventArgs(path.GetToTop()));
                 }
 
+                //check if the last wagon has finished it's trip
                 if (dist > path.length)
                 {
                     dispatherTimer.Stop();
@@ -112,11 +113,12 @@ namespace Train_Screensaver_Client.Logic
                         onLastFinished(null, new FinishedEventArgs(path.GetToTop()));
                 }
 
-                currentDistance += 5;
+                currentDistance += speed / config.framerate;
             };
             dispatherTimer.Interval = TimeSpan.FromMilliseconds( 1000d / config.framerate );
         }
 
+        //send new train
         public void Send(bool right, UInt16 top)
         {
             this.right = right;
@@ -135,6 +137,5 @@ namespace Train_Screensaver_Client.Logic
         {
             this.position = position;
         }
-
     }
 }

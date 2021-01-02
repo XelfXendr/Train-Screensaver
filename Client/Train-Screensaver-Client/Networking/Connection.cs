@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Net.Sockets;
-using System.Threading.Tasks;
+﻿using System.Net.Sockets;
+using System.Threading;
 
 namespace Train_Screensaver_Client.Networking
 {
@@ -20,6 +17,7 @@ namespace Train_Screensaver_Client.Networking
             this.port = port;
         }
 
+        //Open new stream
         public bool Open()
         {
             try
@@ -36,6 +34,7 @@ namespace Train_Screensaver_Client.Networking
             return true;
         }
 
+        //Send message to server
         public bool Send(byte[] data)
         {
             try
@@ -52,6 +51,7 @@ namespace Train_Screensaver_Client.Networking
             
         }
 
+        //Read message froms server
         public bool Read(out byte[] data)
         {
             data = new byte[3];
@@ -66,6 +66,7 @@ namespace Train_Screensaver_Client.Networking
             return true;
         }
 
+        //Close stream
         public void Close()
         {
             if (!(stream is null))
@@ -76,6 +77,14 @@ namespace Train_Screensaver_Client.Networking
 
             stream = null;
             client = null;
+        }
+
+        //Try to reconnect every minute until a connection is established
+        public void Reconnect()
+        {
+            Close();
+            while (!Open())
+                Thread.Sleep(60000);
         }
     }
 }

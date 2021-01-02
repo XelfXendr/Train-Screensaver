@@ -1,17 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Windows;
 
 namespace Train_Screensaver_Client.Logic
 {
     public class Path
     {
-        public double maxTop, minTop, toTop, width;
-        
-        public Point[] pathPoints;
-
-        public double length = 0;
+        public double maxTop, minTop, toTop, width; //screen bounds, where the train can appear
+        public Point[] pathPoints; //points of the Path
+        public double length = 0; //length of the path
 
         public Path(double maxTop, double minTop, double screenWidth)
         {
@@ -20,6 +16,7 @@ namespace Train_Screensaver_Client.Logic
             this.width = screenWidth;
         }
 
+        //get point on Path from distance from the start
         public Point GetPoint(double distance)
         {
             if(distance < 0)
@@ -36,16 +33,20 @@ namespace Train_Screensaver_Client.Logic
                 pathPoints[(int)index].X * (1 - part) + pathPoints[(int)index + 1].X * part,
                 pathPoints[(int)index].Y * (1 - part) + pathPoints[(int)index + 1].Y * part
                 );
-
         }
 
+        //Converts the Y position of the end point of the Path to a UInt16 value used to send to the server
         public UInt16 GetToTop()
         {
             return (UInt16)((toTop - minTop) / (maxTop - minTop) * UInt16.MaxValue);
         }
 
+        //Generates a new path
         public void GeneratePath(UInt16 top)
         {
+            //Path generation works by generating 2 cubic Bézier curves and then turning them into equally-spaced points
+
+            //Computes a starting point Y position from a UInt16 value sent by the server
             double fromTop = ((double)top / UInt16.MaxValue) * (maxTop - minTop) + minTop;
 
             int halfSegCount = 20; //how many segments the final Path consists of divided by 2
@@ -54,6 +55,7 @@ namespace Train_Screensaver_Client.Logic
             Random random = new Random();
             toTop = random.NextDouble() * (maxTop - minTop) + minTop;
 
+            //7 main points: start point, finish point, and 5 more in between
             Point[] points = new Point[7];
             points[0] = new Point(0, fromTop);
             points[3] = new Point((random.NextDouble() + 1) * (width / 3), random.NextDouble() * (maxTop - minTop) + minTop);
@@ -66,10 +68,10 @@ namespace Train_Screensaver_Client.Logic
             points[4] = new Point(a, points[3].Y);
             points[5] = new Point(a, points[6].Y);
 
-            //Making path from two Bézier curves
+            //Making path from two cubic Bézier curves
             Point[] path = new Point[pointCount];
 
-            for (int i = 0; i < halfSegCount; i++)
+            for (int i = 0; i < halfSegCount; i++) //first curve
             {
                 double t = (double)i / halfSegCount;
                 double s = 1 - t;
@@ -78,7 +80,7 @@ namespace Train_Screensaver_Client.Logic
                     ((points[0].Y * s + points[1].Y * t) * s + (points[1].Y * s + points[2].Y * t) * t) * s + ((points[1].Y * s + points[2].Y * t) * s + (points[2].Y * s + points[3].Y * t) * t) * t
                     );
             }
-            for (int i = 0; i <= halfSegCount; i++)
+            for (int i = 0; i <= halfSegCount; i++) //second curve
             {
                 double t = (double)i / halfSegCount;
                 double s = 1 - t;
@@ -88,8 +90,8 @@ namespace Train_Screensaver_Client.Logic
                     );
             }
 
+            //turning curves into equally-spaced points
             double[] accLen = new double[pointCount];
-
             accLen[0] = 0;
             for (int i = 1; i < pointCount; i++)
             {

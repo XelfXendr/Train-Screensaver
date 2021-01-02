@@ -2,13 +2,13 @@ use std::io::prelude::*;
 use std::net::{TcpListener, TcpStream};
 use std::thread;
 use std::sync::mpsc;
-use std::collections::{HashMap};
-use rand;
-use std::env;
-use serde::Deserialize;
-use serde_json::json;
+use std::collections::HashMap;
 use std::fs;
 use std::fs::File;
+use std::env;
+use rand;
+use serde::Deserialize;
+use serde_json::json;
 
 fn main() {
     
@@ -16,10 +16,11 @@ fn main() {
     dir.pop();
     dir.push("config.json");
     
+    //Read configuration file
     let config_json = match fs::read_to_string(&dir) {
         Ok(config) => config,
         Err(e) => match e.kind() {
-            std::io::ErrorKind::NotFound => 
+            std::io::ErrorKind::NotFound => //File doesn't exist, create a new one and notify user
             {
                 let mut file = File::create(dir).expect("Couldn't create configuration file.");
                 let json = json!({
@@ -40,18 +41,24 @@ fn main() {
         }
     };
 
+    //Deserialize configuration
     let c: Config = serde_json::from_str(&config_json).expect("Configuration is invalid. Check for typoes.");
-    let server = format!("{}:{}", c.address, c.port);
-    let listener = TcpListener::bind(&server).unwrap();
     
+    //Create a map that matches an ip address to it's order
     let mut clients: HashMap<String, usize> = HashMap::new();
     for i in 0..c.client_order.len() {
         clients.insert(String::from(&c.client_order[i]), i);
     }
 
+    //Initialize TcpListener
+    let server = format!("{}:{}", c.address, c.port);
+    let listener = TcpListener::bind(&server).unwrap(); //Start TcpListener
+    
+    //Spawn thread that handles communication
     let (sender, receiver) = mpsc::channel::<TcpStream>();
     thread::spawn(move || {communication(receiver, clients)});
 
+    //Handle incoming connections
     println!("Server started, listening on {}", server);
     for stream in listener.incoming() {
         let stream = match stream {
@@ -71,76 +78,58 @@ fn main() {
 }
 
 fn communication(receiver: mpsc::Receiver<TcpStream>, client_order: HashMap<String, usize>) {
-    let mut start_pos: u16 = rand::random::<u16>();
-    let mut going_right = true;
+    let mut start_pos: u16 = rand::random::<u16>(); //starting position of the train (from top)
+    let mut going_right = true; //is the train going right?
 
     let mut right_stack: Vec<Client> = Vec::new();
     let mut left_stack: Vec<Client> = Vec::new();
 
-    let mut will_sort = false;
-    loop {
-        //add incoming streams into queue
-        loop {
-            if right_stack.is_empty() && left_stack.is_empty() {
-                match receiver.recv() {
-                    Ok(stream) => {
-                        let order = match stream.peer_addr() {
-                            Ok(addr) => {
-                                let ip = addr.ip().to_string();
-                                if client_order.contains_key(&ip) {
-                                    client_order[&ip]
-                                }
-                                else {
-                                    continue
-                                }
-                            }
-                            Err(_) => continue,
-                        };
+    let mut will_sort = false; //should the stacks be sorted at the end of the current loop?
 
-                        if going_right {
-                            left_stack.push(Client {stream, order});
-                            left_stack.sort_unstable_by(|a, b| a.order.partial_cmp(&b.order).unwrap());
-                        }
-                        else {
-                            right_stack.push(Client {stream, order});
-                            right_stack.sort_unstable_by(|a, b| b.order.partial_cmp(&a.order).unwrap());
-                        }
-                    },
+    loop {
+        //add incoming streams into stack
+        loop {
+            let stream = if right_stack.is_empty() && left_stack.is_empty() { //both stacks are empty and there's no communication happening, wait for new stream
+                match receiver.recv() {
+                    Ok(stream) => stream,
                     Err(_) => return,
                 }
             }
-            else {
+            else { //stacks aren't empty and there is communication happening, try to accept new stream but don't wait for it
                 match receiver.try_recv() {
-                    Ok(stream) => {
-                        let order = match stream.peer_addr() {
-                            Ok(addr) => {
-                                let ip = addr.ip().to_string();
-                                if client_order.contains_key(&ip) {
-                                    client_order[&ip]
-                                }
-                                else {
-                                    continue
-                                }
-                            }
-                            Err(_) => continue,
-                        };
-
-                        if going_right {
-                            left_stack.push(Client {stream, order});
-                        }
-                        else {
-                            right_stack.push(Client {stream, order});
-                        }
-                        will_sort = true;
-                    },
+                    Ok(stream) => stream,
                     Err(e) => match e {
                         mpsc::TryRecvError::Empty => break,
                         mpsc::TryRecvError::Disconnected => return,
                     }, 
                 }
+            };
+
+            //get the order of the new stream
+            let order = match stream.peer_addr() {
+                Ok(addr) => {
+                    let ip = addr.ip().to_string();
+                    if client_order.contains_key(&ip) {
+                        client_order[&ip]
+                    }
+                    else {
+                        continue;
+                    }
+                }
+                Err(_) => continue,
+            };
+
+            //add the new stream to the stacks
+            if going_right {
+                left_stack.push(Client {stream, order});
             }
+            else {
+                right_stack.push(Client {stream, order});
+            }
+            will_sort = true;
         }
         
+        //pop the client, who's turn it is right now
         let mut client;
         if going_right {
             if right_stack.is_empty() {
@@ -165,6 +154,7 @@ fn communication(receiver: mpsc::Receiver<TcpStream>, client_order: HashMap<Stri
             client = left_stack.pop().unwrap();
         }
 
+        //send train on the client
         let buffer: [u8; 3] = if going_right { 
             [0x90, (start_pos >> 8) as u8, start_pos as u8] //train right 
         }
@@ -182,6 +172,7 @@ fn communication(receiver: mpsc::Receiver<TcpStream>, client_order: HashMap<Stri
             },
         }
 
+        //wait for the client's train to finish it's trip
         let mut buffer: [u8; 3] = [0; 3];
         match client.stream.read(&mut buffer) {
             Ok(n) => if n != 3 {
@@ -200,6 +191,7 @@ fn communication(receiver: mpsc::Receiver<TcpStream>, client_order: HashMap<Stri
             },
         }
 
+        //put the client back into the stacks
         if going_right {
             left_stack.push(client);
         }
