@@ -48,7 +48,7 @@ namespace Train_Screensaver_Client.Logic
                 else
                     bitmap = images[config.trainIndexes[i]];
 
-                wagons[i] = new Image() { Source = bitmap, Width = bitmap.Width, Height = bitmap.Height };
+                wagons[i] = new Image() { Source = bitmap, Width = config.scale * bitmap.Width / bitmap.Height, Height = config.scale };
                 wagons[i].RenderTransformOrigin = new Point(0.5, 0.5);
                 canvas.Children.Add(wagons[i]);
                 Canvas.SetLeft(wagons[i], -wagons[i].Width);
@@ -68,11 +68,18 @@ namespace Train_Screensaver_Client.Logic
                 //move each wagon
                 foreach (var wagon in wagons)
                 {
-                    Point pointBack = path.GetPoint(dist);
-                    Point pointFront = path.GetPoint(dist + wagon.Width);
+                    Point pointBack;
+                    Point pointFront;
 
+                    if(right)
+                    {
+                        pointBack = path.GetPoint(dist - wagon.Width);
+                        pointFront = path.GetPoint(dist);
+                    }
                     if (!right)
                     {
+                        pointBack = path.GetPoint(dist);
+                        pointFront = path.GetPoint(dist + wagon.Width);
                         pointFront.X = path.width - pointFront.X;
                         pointBack.X = path.width - pointBack.X;
                     }
@@ -123,7 +130,7 @@ namespace Train_Screensaver_Client.Logic
         {
             this.right = right;
             firstFinished = false;
-            currentDistance = -100;
+            currentDistance = 0;
             path.GeneratePath(top);
             dispatherTimer.Start();
         }

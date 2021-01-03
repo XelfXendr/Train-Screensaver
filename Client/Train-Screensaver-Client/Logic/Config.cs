@@ -11,6 +11,7 @@ namespace Train_Screensaver_Client.Logic
         public string server { get; set; }
         public ushort port { get; set; }
         public int framerate { get; set; }
+        public double scale { get; set; }
         public string[] wagonSources { get; set; }
         public int[] trainIndexes { get; set; }
 
@@ -54,6 +55,7 @@ namespace Train_Screensaver_Client.Logic
                 server = "",
                 port = 25308,
                 framerate = 30,
+                scale = 100,
                 wagonSources = new string[] { "example1.png", "example2.jpg" },
                 trainIndexes = new int[] { 0, 1, 1 },
             };
