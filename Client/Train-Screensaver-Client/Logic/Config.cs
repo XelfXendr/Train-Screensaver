@@ -52,7 +52,7 @@ namespace Train_Screensaver_Client.Logic
         {
             return new Config()
             {
-                server = "",
+                server = "127.0.0.1",
                 port = 25308,
                 framerate = 30,
                 scale = 100,
