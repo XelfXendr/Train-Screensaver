@@ -166,10 +166,7 @@ fn communication(receiver: mpsc::Receiver<TcpStream>, client_order: HashMap<Stri
                 println!("Couldn't write 3 bytes to stream.");
                 continue;
             },
-            Err(e) => {
-                println!("Writing failed with error {}.", e);
-                continue;
-            },
+            Err(_) => continue,
         }
 
         //wait for the client's train to finish it's trip
@@ -185,10 +182,8 @@ fn communication(receiver: mpsc::Receiver<TcpStream>, client_order: HashMap<Stri
                     _ => continue,
                 }
             },
-            Err(e) => { 
-                println!("Receiving failed with error {}", e);
-                continue;
-            },
+            Err(_) =>
+                continue,
         }
 
         //put the client back into the stacks
